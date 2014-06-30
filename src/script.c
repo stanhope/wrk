@@ -21,9 +21,40 @@ static const struct luaL_reg statslib[] = {
     { NULL,      NULL             }
 };
 
+static int lua_dns_lookup(lua_State *L)
+{
+  const char* hostname = lua_tostring(L, 1);
+  struct addrinfo *addrs=NULL;
+  struct addrinfo hints;
+  memset(&hints, 0, sizeof hints);
+  hints.ai_family = AF_INET;
+  hints.ai_socktype = SOCK_STREAM;
+  int rc;
+  if ((rc = getaddrinfo(hostname, "http", &hints, &addrs)) != 0) {
+    freeaddrinfo(addrs);
+    lua_pushnil(L);
+    return 1;
+  }
+
+  // We only return the first record obtained
+  char addrstr[100];
+  if (addrs) {
+    void *ptr;
+    ptr = &((struct sockaddr_in *) addrs->ai_addr)->sin_addr;
+    inet_ntop (addrs->ai_family, ptr, addrstr, 100);
+  }
+  freeaddrinfo(addrs);
+  lua_pushstring(L, addrstr);
+
+  return 1;
+}
+
 lua_State *script_create(char *scheme, char *host, char *port, char *path) {
     lua_State *L = luaL_newstate();
     luaL_openlibs(L);
+
+    lua_register(L, "dns_lookup", lua_dns_lookup);
+
     luaL_dostring(L, "wrk = require \"wrk\"");
 
     luaL_newmetatable(L, "wrk.stats");

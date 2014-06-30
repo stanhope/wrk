@@ -5,6 +5,11 @@
 #include <lua.h>
 #include <lualib.h>
 #include <lauxlib.h>
+#define __USE_POSIX
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
+#include <arpa/inet.h>
 #include "stats.h"
 
 typedef struct {
